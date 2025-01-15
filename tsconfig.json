@@ -6,6 +6,6 @@
         "outDir": "dist",                  // Output directory for compiled JS files
     },
     "ts-node": { },
-    "include": ["src", "e2e", "e2e/hello.spec.ts"],
+    "include": ["src", "e2e", "e2e/create_account_and_send_near.spec.ts"],
     "exclude": ["node_modules", "dist"]
 }
