@@ -1,16 +1,23 @@
 import { expect, test } from '@playwright/test';
-import { Worker} from 'near-workspaces';
+import { Provider, Worker} from 'near-workspaces';
 import { Tokens } from '../src/near-api';
 
-test("create account and send NEAR", async () => {
-    
-    const worker = await Worker.init();
+let worker: Worker;
 
+test.afterEach(async () => {
+    await worker.tearDown();
+});
+
+test("create account and send NEAR", async () => {
+    worker = await Worker.init();
     const account = await worker.rootAccount.devCreateAccount();
-    console.log(worker.provider.connection);
-    
-    const balance = await Tokens.account(account.accountId).nearBalance();
-    console.log(`Balance: ${balance}`);
+    await new Promise(resolve => setTimeout(() => resolve(null), 1000));
+    const expectedBalance = (await account.balance()).total;
+
+    const balance = await (await Tokens.account(account.accountId).nearBalance())
+            .fetchFrom(worker.provider.connection.url);
+
+    expect(balance).toBe(expectedBalance.toString())
 
 /*    let network = near_workspaces::sandbox().await.unwrap();
     let account = network.dev_create_account().await.unwrap();

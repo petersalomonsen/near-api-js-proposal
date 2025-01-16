@@ -2,7 +2,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "test": "playwright test"
+    "test": "npm run build && playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1",
