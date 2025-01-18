@@ -60,19 +60,81 @@ export const SCHEMA = new class BorshSchema {
             data: { array: { type: 'u8', len: 32 } },
         }
     };
-    CreateAccount: Schema = {
+    FunctionCallPermission: Schema = {
         struct: {
+            allowance: { option: 'u128' },
+            receiverId: 'string',
+            methodNames: { array: { type: 'string' } },
+        }
+    };
+    FullAccessPermission: Schema = {
+        struct: {}
+    };
+    AccessKeyPermission: Schema = {
+        enum: [
+            { struct: { functionCall: this.FunctionCallPermission } },
+            { struct: { fullAccess: this.FullAccessPermission } },
+        ]
+    };
+    AccessKey: Schema = {
+        struct: {
+            nonce: 'u64',
+            permission: this.AccessKeyPermission,
+        }
+    };
+    CreateAccount: Schema = {
+        struct: {}
+    };
+    DeployContract: Schema = {
+        struct: {
+            code: { array: { type: 'u8' } },
+        }
+    };
+    FunctionCall: Schema = {
+        struct: {
+            methodName: 'string',
+            args: { array: { type: 'u8' } },
+            gas: 'u64',
+            deposit: 'u128',
         }
     };
     Transfer: Schema = {
         struct: {
-            amount: 'u128',
+            deposit: 'u128',
+        }
+    };
+    Stake: Schema = {
+        struct: {
+            stake: 'u128',
+            publicKey: this.PublicKey,
+        }
+    };
+    AddKey: Schema = {
+        struct: {
+            publicKey: this.PublicKey,
+            accessKey: this.AccessKey,
+        }
+    };
+    DeleteKey: Schema = {
+        struct: {
+            publicKey: this.PublicKey,
+        }
+    };
+    DeleteAccount: Schema = {
+        struct: {
+            beneficiaryId: 'string',
         }
     };
     Action: Schema = {
         enum: [
             { struct: { createAccount: this.CreateAccount } },
-            { struct: { transfer: this.Transfer } }
+            { struct: { deployContract: this.DeployContract } },
+            { struct: { functionCall: this.FunctionCall } },
+            { struct: { transfer: this.Transfer } },
+            { struct: { stake: this.Stake } },
+            { struct: { addKey: this.AddKey } },
+            { struct: { deleteKey: this.DeleteKey } },
+            { struct: { deleteAccount: this.DeleteAccount } },
         ]
     };
     Transaction: Schema = {
@@ -103,7 +165,7 @@ export async function createTransaction(
 ) {
     const actions = [
         {createAccount: {}},
-        //{transfer: {amount: BigInt(initialBalance)}}
+        {transfer: {deposit: BigInt(initialBalance)}}
     ];
 
     const transaction = new Transaction(

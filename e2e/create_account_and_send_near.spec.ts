@@ -38,11 +38,10 @@ test("create account and send NEAR", async () => {
         recentBlockHash, newAccountId, "100");
     
     const nearapijstx = nearApi.transactions.createTransaction(account.accountId, nearApi.utils.PublicKey.from(devKeyPair.getPublicKey().toString()),newAccountId,nonce,
-            [nearApi.transactions.createAccount()],
+            [nearApi.transactions.createAccount(),
+                nearApi.transactions.transfer(BigInt("100"))
+            ],
         recentBlockHash);
-
-    console.log(JSON.stringify(Array.from(tx)));
-    console.log(JSON.stringify(Array.from(nearApi.transactions.encodeTransaction(nearapijstx))));
 
     const signature = devKeyPair.sign(await hash(tx));
     const serializedAndSignedTx = serializeTransactionAndSignature(tx, signature.signature);
@@ -76,8 +75,12 @@ test("create account and send NEAR", async () => {
             }
         )
     }).then(r => r.json());
-    
-    console.log(JSON.stringify(transactionResult));
+
+    await expect(transactionResult.result.status.SuccessValue).toBe("");
+
+    const newAccountView = await worker.provider.viewAccount(newAccountId);
+    expect(newAccountView.amount).toBe("100");
+
 /*    let network = near_workspaces::sandbox().await.unwrap();
     let account = network.dev_create_account().await.unwrap();
     let network = NetworkConfig::from(network);
