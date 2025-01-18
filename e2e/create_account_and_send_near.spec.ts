@@ -30,17 +30,21 @@ test("create account and send NEAR", async () => {
         accessKey.block_hash
     );
 
+    const newAccountId = `bob.${account.accountId}`;
     const tx = await createTransaction(
         account.accountId,
         devKeyPair.getPublicKey().data,
         nonce,
-        recentBlockHash, "bob", "100");
+        recentBlockHash, newAccountId, "100");
     
-    const nearapijstx = nearApi.transactions.createTransaction(account.accountId, nearApi.utils.PublicKey.from(devKeyPair.getPublicKey().toString()),"bob",nonce,[],
+    const nearapijstx = nearApi.transactions.createTransaction(account.accountId, nearApi.utils.PublicKey.from(devKeyPair.getPublicKey().toString()),newAccountId,nonce,
+            [nearApi.transactions.createAccount()],
         recentBlockHash);
 
+    console.log(JSON.stringify(Array.from(tx)));
+    console.log(JSON.stringify(Array.from(nearApi.transactions.encodeTransaction(nearapijstx))));
+
     const signature = devKeyPair.sign(await hash(tx));
-    console.log(signature.signature);
     const serializedAndSignedTx = serializeTransactionAndSignature(tx, signature.signature);
 
     const keyStore = new nearApi.keyStores.InMemoryKeyStore();
@@ -54,7 +58,7 @@ test("create account and send NEAR", async () => {
 
     const nearApiJSAccount = await near.account(account.accountId);
     const [txHash, signedTx] = await nearApi.transactions.signTransaction(nearapijstx,nearApiJSAccount.connection.signer, account.accountId,"sandbox");
-    console.log(signedTx.signature);
+
     const transactionResult = await fetch(worker.provider.connection.url, {
         method: 'POST',
         headers: {
@@ -73,7 +77,7 @@ test("create account and send NEAR", async () => {
         )
     }).then(r => r.json());
     
-    console.log(JSON.stringify(transactionResult, null, 1));
+    console.log(JSON.stringify(transactionResult));
 /*    let network = near_workspaces::sandbox().await.unwrap();
     let account = network.dev_create_account().await.unwrap();
     let network = NetworkConfig::from(network);

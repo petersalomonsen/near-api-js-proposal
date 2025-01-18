@@ -61,7 +61,8 @@ export const SCHEMA = new class BorshSchema {
         }
     };
     CreateAccount: Schema = {
-        struct: {}
+        struct: {
+        }
     };
     Transfer: Schema = {
         struct: {
@@ -101,8 +102,8 @@ export async function createTransaction(
     initialBalance: string
 ) {
     const actions = [
-       /* {createAccount: {}},
-        {transfer: {amount: BigInt(initialBalance)}}*/
+        {createAccount: {}},
+        //{transfer: {amount: BigInt(initialBalance)}}
     ];
 
     const transaction = new Transaction(
