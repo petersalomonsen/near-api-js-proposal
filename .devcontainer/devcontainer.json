@@ -1,7 +1,7 @@
 {
-    "customizations": {
-        "vscode": {
-            "extensions": ["ms-playwright.playwright"]
-        }
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-playwright.playwright"]
     }
+  }
 }

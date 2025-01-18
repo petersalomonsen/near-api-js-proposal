@@ -1,68 +1,77 @@
-import { expect, test } from '@playwright/test';
-import { Worker, } from 'near-workspaces';
-import { Tokens } from '../src/near-api';
-import { createTransaction, serializeTransactionAndSignature, hash } from '../src/transaction';
-import bs58 from 'bs58';
+import { expect, test } from "@playwright/test";
+import { Worker } from "near-workspaces";
+import { Tokens } from "../src/near-api";
+import { serializeTransactionAndSignature, hash } from "../src/transaction";
+import bs58 from "bs58";
+import { Account } from "../src/account";
 
 let worker: Worker;
 
 test.afterEach(async () => {
-    if (worker) {
-        await worker.tearDown();
-    }
+  if (worker) {
+    await worker.tearDown();
+  }
 });
 
 test("create account and send NEAR", async () => {
-    worker = await Worker.init();
-    const account = await worker.rootAccount.devCreateAccount();
-    await new Promise(resolve => setTimeout(() => resolve(null), 1500));
+  worker = await Worker.init();
+  const account = await worker.rootAccount.devCreateAccount();
+  await new Promise((resolve) => setTimeout(() => resolve(null), 1500));
 
-    const expectedBalance = (await account.balance()).total;
-    const balance = await (await Tokens.account(account.accountId).nearBalance())
-            .fetchFrom(worker.provider.connection.url);
+  const expectedBalance = (await account.balance()).total;
+  const balance = await (
+    await Tokens.account(account.accountId).nearBalance()
+  ).fetchFrom(worker.provider.connection.url);
 
-    expect(balance).toBe(expectedBalance.toString())
+  expect(balance).toBe(expectedBalance.toString());
 
-    const devKeyPair = await account.getKey();
-    const accessKey = await account.viewAccessKey(account.accountId, devKeyPair.getPublicKey().toString());
-    const nonce = ++accessKey.nonce;
+  const devKeyPair = await account.getKey();
+  const accessKey = await account.viewAccessKey(
+    account.accountId,
+    devKeyPair.getPublicKey().toString(),
+  );
+  const nonce = ++accessKey.nonce;
 
-    const recentBlockHashBase58 = bs58.decode(accessKey.block_hash);
+  const recentBlockHashBase58 = bs58.decode(accessKey.block_hash);
 
-    const newAccountId = `bob.${account.accountId}`;
-    const tx = await createTransaction(
-        account.accountId,
-        devKeyPair.getPublicKey().data,
-        nonce,
-        recentBlockHashBase58, newAccountId, "100");
-    
-    const signature = devKeyPair.sign(await hash(tx));
-    const serializedAndSignedTx = serializeTransactionAndSignature(tx, signature.signature);
+  const newAccountId = `bob.${account.accountId}`;
+  const tx = await Account.createAccount(newAccountId)
+    .fundMyself(BigInt(100))
+    .asTransaction(
+      account.accountId,
+      devKeyPair.getPublicKey().data,
+      nonce,
+      recentBlockHashBase58,
+    );
 
-    const transactionResult = await fetch(worker.provider.connection.url, {
-        method: 'POST',
-        headers: {
-            'content-type': 'application/json'
-        },
-        body: JSON.stringify(
-            {
-                "jsonrpc": "2.0",
-                "id": "dontcare",
-                "method": "send_tx",
-                "params": {
-                  "signed_tx_base64": Buffer.from(serializedAndSignedTx).toString('base64'),
-                  "wait_until": "INCLUDED_FINAL"
-                }
-            }
-        )
-    }).then(r => r.json());
+  const signature = devKeyPair.sign(await hash(tx));
+  const serializedAndSignedTx = serializeTransactionAndSignature(
+    tx,
+    signature.signature,
+  );
 
-    await expect(transactionResult.result.status.SuccessValue).toBe("");
+  const transactionResult = await fetch(worker.provider.connection.url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: "dontcare",
+      method: "send_tx",
+      params: {
+        signed_tx_base64: Buffer.from(serializedAndSignedTx).toString("base64"),
+        wait_until: "INCLUDED_FINAL",
+      },
+    }),
+  }).then((r) => r.json());
 
-    const newAccountView = await worker.provider.viewAccount(newAccountId);
-    expect(newAccountView.amount).toBe("100");
+  await expect(transactionResult.result.status.SuccessValue).toBe("");
 
-/*    let network = near_workspaces::sandbox().await.unwrap();
+  const newAccountView = await worker.provider.viewAccount(newAccountId);
+  expect(newAccountView.amount).toBe("100");
+
+  /*    let network = near_workspaces::sandbox().await.unwrap();
     let account = network.dev_create_account().await.unwrap();
     let network = NetworkConfig::from(network);
 
