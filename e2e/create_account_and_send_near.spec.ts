@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { Provider, Worker} from 'near-workspaces';
+import { Worker, } from 'near-workspaces';
 import { Tokens } from '../src/near-api';
 import { createTransaction, serializeTransactionAndSignature, hash } from '../src/transaction';
-import * as nearApi from 'near-api-js';
+import bs58 from 'bs58';
 
 let worker: Worker;
 
@@ -26,37 +26,18 @@ test("create account and send NEAR", async () => {
     const devKeyPair = await account.getKey();
     const accessKey = await account.viewAccessKey(account.accountId, devKeyPair.getPublicKey().toString());
     const nonce = ++accessKey.nonce;
-    const recentBlockHash = nearApi.utils.serialize.base_decode(
-        accessKey.block_hash
-    );
+
+    const recentBlockHashBase58 = bs58.decode(accessKey.block_hash);
 
     const newAccountId = `bob.${account.accountId}`;
     const tx = await createTransaction(
         account.accountId,
         devKeyPair.getPublicKey().data,
         nonce,
-        recentBlockHash, newAccountId, "100");
+        recentBlockHashBase58, newAccountId, "100");
     
-    const nearapijstx = nearApi.transactions.createTransaction(account.accountId, nearApi.utils.PublicKey.from(devKeyPair.getPublicKey().toString()),newAccountId,nonce,
-            [nearApi.transactions.createAccount(),
-                nearApi.transactions.transfer(BigInt("100"))
-            ],
-        recentBlockHash);
-
     const signature = devKeyPair.sign(await hash(tx));
     const serializedAndSignedTx = serializeTransactionAndSignature(tx, signature.signature);
-
-    const keyStore = new nearApi.keyStores.InMemoryKeyStore();
-
-    keyStore.setKey("sandbox", account.accountId, nearApi.utils.KeyPair.fromString(devKeyPair.toString() as nearApi.utils.KeyPairString));
-    const near = await nearApi.connect({
-        networkId: "sandbox",
-        nodeUrl: worker.provider.connection.url,
-        keyStore
-    });
-
-    const nearApiJSAccount = await near.account(account.accountId);
-    const [txHash, signedTx] = await nearApi.transactions.signTransaction(nearapijstx,nearApiJSAccount.connection.signer, account.accountId,"sandbox");
 
     const transactionResult = await fetch(worker.provider.connection.url, {
         method: 'POST',

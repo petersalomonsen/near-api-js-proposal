@@ -177,7 +177,6 @@ export async function createTransaction(
         actions
     );
 
-    console.log(transaction);
     const serializedTransaction = serialize(SCHEMA.Transaction, transaction);    
     return serializedTransaction;
 }
