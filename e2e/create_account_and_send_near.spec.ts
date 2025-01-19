@@ -60,8 +60,7 @@ test("create account and send NEAR", async () => {
       id: "dontcare",
       method: "send_tx",
       params: {
-        signed_tx_base64: Buffer.from(serializedAndSignedTx).toString("base64"),
-        wait_until: "INCLUDED_FINAL",
+        signed_tx_base64: Buffer.from(serializedAndSignedTx).toString("base64")
       },
     }),
   }).then((r) => r.json());
@@ -71,7 +70,21 @@ test("create account and send NEAR", async () => {
   const newAccountView = await worker.provider.viewAccount(newAccountId);
   expect(newAccountView.amount).toBe("100");
 
-  await new Promise((resolve) => setTimeout(() => resolve(null), 1500));
+  const transactionStatus = await fetch(worker.provider.connection.url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({"jsonrpc": "2.0",
+    "id": "dontcare",
+    "method": "tx",
+    "params": {
+      "tx_hash": transactionResult.result.transaction.hash,
+      "sender_account_id": transactionResult.result.transaction.signer_id,
+      "wait_until": "FINAL"
+    }})
+  }).then((r) => r.json());
+
   const newAccountBalance = await (
     await Tokens.account(newAccountId).nearBalance()
   ).fetchFrom(worker.provider.connection.url);
