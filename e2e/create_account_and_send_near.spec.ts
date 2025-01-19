@@ -71,6 +71,13 @@ test("create account and send NEAR", async () => {
   const newAccountView = await worker.provider.viewAccount(newAccountId);
   expect(newAccountView.amount).toBe("100");
 
+  await new Promise((resolve) => setTimeout(() => resolve(null), 1500));
+  const newAccountBalance = await (
+    await Tokens.account(newAccountId).nearBalance()
+  ).fetchFrom(worker.provider.connection.url);
+
+  expect(newAccountBalance).toBe(newAccountView.amount.toString());
+
   /*    let network = near_workspaces::sandbox().await.unwrap();
     let account = network.dev_create_account().await.unwrap();
     let network = NetworkConfig::from(network);
