@@ -16,6 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
+          sudo apt-get install gcc-multilib
           ./.devcontainer/install-dependencies.sh
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
