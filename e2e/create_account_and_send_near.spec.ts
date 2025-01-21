@@ -4,6 +4,7 @@ import { Tokens } from "../src/near-api";
 import { serializeTransactionAndSignature, hash } from "../src/transaction";
 import bs58 from "bs58";
 import { Account } from "../src/account";
+import { sign } from '../src/signer';
 
 let worker: Worker;
 
@@ -44,10 +45,10 @@ test("create account and send NEAR", async () => {
       recentBlockHashBase58,
     );
 
-  const signature = devKeyPair.sign(await hash(tx));
+  const signature = await sign(devKeyPair.toString(), await hash(tx));
   const serializedAndSignedTx = serializeTransactionAndSignature(
     tx,
-    signature.signature,
+    signature
   );
 
   const transactionResult = await fetch(worker.provider.connection.url, {
