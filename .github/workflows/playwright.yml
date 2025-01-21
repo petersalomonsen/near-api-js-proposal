@@ -19,6 +19,7 @@ jobs:
         run: npx playwright install --with-deps
       - name: Build wasmlib
         run: |
+          rustup target add wasm32-wasip1
           cd wasmlib
           cargo build --target=wasm32-wasip1 --release
       - name: Run Playwright tests
