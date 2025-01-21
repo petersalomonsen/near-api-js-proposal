@@ -16,14 +16,11 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          sudo apt-get update
-          sudo apt-get install build-essential
-          sudo apt-get install libc6-dev
+          ./.devcontainer/install-dependencies.sh
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
       - name: Build wasmlib
         run: |
-          rustup target add wasm32-wasip1
           cd wasmlib
           cargo build --target=wasm32-wasip1 --release
       - name: Run Playwright tests
