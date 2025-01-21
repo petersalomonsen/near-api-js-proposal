@@ -1,7 +1,7 @@
 {
   "customizations": {
     "vscode": {
-      "extensions": ["ms-playwright.playwright"]
+      "extensions": ["ms-playwright.playwright","rust-lang.rust-analyzer"]
     }
   }
 }
