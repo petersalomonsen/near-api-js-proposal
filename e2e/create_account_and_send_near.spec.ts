@@ -4,7 +4,8 @@ import { Tokens } from "../src/near-api";
 import { serializeTransactionAndSignature, hash } from "../src/transaction";
 import bs58 from "bs58";
 import { Account } from "../src/account";
-import { sign } from '../src/signer';
+import { sign } from "../src/signer";
+import { fetchAccessKey } from "../src/accesskeys";
 
 let worker: Worker;
 
@@ -15,24 +16,34 @@ test.afterEach(async () => {
 });
 
 test("create account and send NEAR", async () => {
+  // Create the sandbox network
   worker = await Worker.init();
+
+  // Create a new dev account
   const account = await worker.rootAccount.devCreateAccount();
   await new Promise((resolve) => setTimeout(() => resolve(null), 1500));
 
+  // Check the token balance of the newly created dev account directly on the sandbox
   const expectedBalance = (await account.balance()).total;
+
+  // Use the NEAR API to check the token balance of the newly created dev account
   const balance = await (
     await Tokens.account(account.accountId).nearBalance()
   ).fetchFrom(worker.provider.connection.url);
 
+  // Check that the token balance fetched from the NEAR API matches the balance fetched from the sandbox
   expect(balance).toBe(expectedBalance.toString());
 
+  // Get the keypair of the dev account from the sandbox
+
   const devKeyPair = await account.getKey();
-  const accessKey = await account.viewAccessKey(
+  const accessKey = await fetchAccessKey(
+    worker.provider.connection.url,
     account.accountId,
     devKeyPair.getPublicKey().toString(),
   );
-  const nonce = ++accessKey.nonce;
 
+  const nonce = ++accessKey.nonce;
   const recentBlockHashBase58 = bs58.decode(accessKey.block_hash);
 
   const newAccountId = `bob.${account.accountId}`;
@@ -46,10 +57,7 @@ test("create account and send NEAR", async () => {
     );
 
   const signature = await sign(devKeyPair.toString(), await hash(tx));
-  const serializedAndSignedTx = serializeTransactionAndSignature(
-    tx,
-    signature
-  );
+  const serializedAndSignedTx = serializeTransactionAndSignature(tx, signature);
 
   const transactionResult = await fetch(worker.provider.connection.url, {
     method: "POST",
@@ -61,7 +69,7 @@ test("create account and send NEAR", async () => {
       id: "dontcare",
       method: "send_tx",
       params: {
-        signed_tx_base64: Buffer.from(serializedAndSignedTx).toString("base64")
+        signed_tx_base64: Buffer.from(serializedAndSignedTx).toString("base64"),
       },
     }),
   }).then((r) => r.json());
@@ -76,14 +84,16 @@ test("create account and send NEAR", async () => {
     headers: {
       "content-type": "application/json",
     },
-    body: JSON.stringify({"jsonrpc": "2.0",
-    "id": "dontcare",
-    "method": "tx",
-    "params": {
-      "tx_hash": transactionResult.result.transaction.hash,
-      "sender_account_id": transactionResult.result.transaction.signer_id,
-      "wait_until": "FINAL"
-    }})
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: "dontcare",
+      method: "tx",
+      params: {
+        tx_hash: transactionResult.result.transaction.hash,
+        sender_account_id: transactionResult.result.transaction.signer_id,
+        wait_until: "FINAL",
+      },
+    }),
   }).then((r) => r.json());
 
   const newAccountBalance = await (
