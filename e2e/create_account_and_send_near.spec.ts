@@ -4,7 +4,7 @@ import { Tokens } from "../src/near-api";
 import { serializeTransactionAndSignature, hash } from "../src/transaction";
 import bs58 from "bs58";
 import { Account } from "../src/account";
-import { sign } from "../src/signer";
+import { sign, Signer } from "../src/signer";
 import { fetchAccessKey } from "../src/accesskeys";
 
 let worker: Worker;
@@ -37,42 +37,17 @@ test("create account and send NEAR", async () => {
   // Get the keypair of the dev account from the sandbox
 
   const devKeyPair = await account.getKey();
-  const accessKey = await fetchAccessKey(
-    worker.provider.connection.url,
-    account.accountId,
-    devKeyPair.getPublicKey().toString(),
-  );
-
-  const nonce = ++accessKey.nonce;
-  const recentBlockHashBase58 = bs58.decode(accessKey.block_hash);
-
   const newAccountId = `bob.${account.accountId}`;
-  const tx = await Account.createAccount(newAccountId)
+  const signer = await Signer.from(
+    account.accountId,
+    devKeyPair.toString(),
+    worker.provider.connection.url,
+  );
+  const transactionResult = await Account.createAccount(newAccountId)
     .fundMyself(BigInt(100))
-    .asTransaction(
-      account.accountId,
-      devKeyPair.getPublicKey().data,
-      nonce,
-      recentBlockHashBase58,
-    );
-
-  const signature = await sign(devKeyPair.toString(), await hash(tx));
-  const serializedAndSignedTx = serializeTransactionAndSignature(tx, signature);
-
-  const transactionResult = await fetch(worker.provider.connection.url, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: "dontcare",
-      method: "send_tx",
-      params: {
-        signed_tx_base64: Buffer.from(serializedAndSignedTx).toString("base64"),
-      },
-    }),
-  }).then((r) => r.json());
+    //.publicKey(devKeyPair.getPublicKey().toString())
+    .withSigner(signer)
+    .send();
 
   await expect(transactionResult.result.status.SuccessValue).toBe("");
 
