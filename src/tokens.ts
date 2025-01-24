@@ -1,6 +1,7 @@
 export class Tokens {
   private query: any;
   accountId: string;
+
   constructor(accountId) {
     this.accountId = accountId;
   }

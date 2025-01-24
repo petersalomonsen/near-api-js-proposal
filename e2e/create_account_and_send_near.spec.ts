@@ -1,11 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { Worker } from "near-workspaces";
 import { Tokens } from "../src/near-api";
-import { serializeTransactionAndSignature, hash } from "../src/transaction";
-import bs58 from "bs58";
 import { Account } from "../src/account";
-import { sign, Signer } from "../src/signer";
-import { fetchAccessKey } from "../src/accesskeys";
+import { Signer } from "../src/signer";
 
 let worker: Worker;
 
@@ -19,14 +16,25 @@ test("create account and send NEAR", async () => {
   // Create the sandbox network
   worker = await Worker.init();
 
-  // Create a new dev account
+  // Create a new dev account from the sandbox
   const account = await worker.rootAccount.devCreateAccount();
   await new Promise((resolve) => setTimeout(() => resolve(null), 1500));
 
   // Check the token balance of the newly created dev account directly on the sandbox
   const expectedBalance = (await account.balance()).total;
 
-  // Use the NEAR API to check the token balance of the newly created dev account
+  /* Use the API to check the token balance of the newly created dev account
+
+    Here's the Rust equivalent:
+
+    let balance = Tokens::account(account.id().clone())
+        .near_balance()
+        .fetch_from(&network)
+        .await
+        .unwrap();
+
+  */
+
   const balance = await (
     await Tokens.account(account.accountId).nearBalance()
   ).fetchFrom(worker.provider.connection.url);
@@ -37,6 +45,22 @@ test("create account and send NEAR", async () => {
   // Get the keypair of the dev account from the sandbox
 
   const devKeyPair = await account.getKey();
+
+  /* Use the API to create a new account, Similar in Rust is
+
+    let new_account: AccountId = format!("{}.{}", "bob", account.id()).parse().unwrap();
+    let signer = Signer::new(Signer::from_workspace(&account)).unwrap();
+
+    Account::create_account(new_account.clone())
+        .fund_myself(account.id().clone(), NearToken::from_near(1))
+        .public_key(generate_secret_key().unwrap().public_key())
+        .unwrap()
+        .with_signer(signer.clone())
+        .send_to(&network)
+        .await
+        .unwrap();
+    */
+
   const newAccountId = `bob.${account.accountId}`;
   const signer = await Signer.from(
     account.accountId,
@@ -49,12 +73,14 @@ test("create account and send NEAR", async () => {
     .withSigner(signer)
     .send();
 
+  // Check the transaction result
   await expect(transactionResult.result.status.SuccessValue).toBe("");
 
+  // Check the new account balance with the worker
   const newAccountView = await worker.provider.viewAccount(newAccountId);
   expect(newAccountView.amount).toBe("100");
 
-  // Wait for transaction to be finalized
+  // Wait for transaction to be finalized (before we can check the balance using the API)
   await fetch(worker.provider.connection.url, {
     method: "POST",
     headers: {
@@ -72,7 +98,7 @@ test("create account and send NEAR", async () => {
     }),
   }).then((r) => r.json());
 
-  // Check the token balance
+  // Check the token balance with the API
 
   const newAccountBalance = await (
     await Tokens.account(newAccountId).nearBalance()
