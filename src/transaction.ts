@@ -1,4 +1,5 @@
 import { serialize, Schema, deserialize } from "borsh";
+import { PublicKey } from "./keypair";
 
 abstract class Action {
   constructor() {}
@@ -13,13 +14,6 @@ export class Transfer extends Action {
     super();
     this.deposit = deposit;
   }
-}
-
-class PublicKey {
-  constructor(
-    public keyType: number,
-    public data: Uint8Array,
-  ) {}
 }
 
 export class Transaction {

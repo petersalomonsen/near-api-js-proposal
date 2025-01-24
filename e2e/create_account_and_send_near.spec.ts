@@ -45,7 +45,7 @@ test("create account and send NEAR", async () => {
   );
   const transactionResult = await Account.createAccount(newAccountId)
     .fundMyself(BigInt(100))
-    //.publicKey(devKeyPair.getPublicKey().toString())
+    .publicKey(devKeyPair.getPublicKey().toString())
     .withSigner(signer)
     .send();
 
@@ -54,7 +54,8 @@ test("create account and send NEAR", async () => {
   const newAccountView = await worker.provider.viewAccount(newAccountId);
   expect(newAccountView.amount).toBe("100");
 
-  const transactionStatus = await fetch(worker.provider.connection.url, {
+  // Wait for transaction to be finalized
+  await fetch(worker.provider.connection.url, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -70,6 +71,8 @@ test("create account and send NEAR", async () => {
       },
     }),
   }).then((r) => r.json());
+
+  // Check the token balance
 
   const newAccountBalance = await (
     await Tokens.account(newAccountId).nearBalance()

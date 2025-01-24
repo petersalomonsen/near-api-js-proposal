@@ -6,6 +6,7 @@ import {
 } from "./transaction";
 import bs58 from "bs58";
 import "./polyfills";
+import { PublicKey } from "./keypair";
 
 export class Account {
   accountId: string;
@@ -27,10 +28,10 @@ export class Account {
   publicKey(publicKey: string) {
     this.actions.push({
       addKey: {
-        publicKey,
+        publicKey: PublicKey.fromString(publicKey),
         accessKey: {
           nonce: 0,
-          permission: "FullAccess",
+          permission: { fullAccess: {} },
         },
       },
     });
