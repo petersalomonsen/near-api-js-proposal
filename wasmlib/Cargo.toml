@@ -1,0 +1,18 @@
+[package]
+authors = ["Peter Salomonsen"]
+edition = "2018"
+name = "wasmlib"
+publish = false
+version = "0.1.0"
+
+# Add this section to specify the binary target
+[[bin]]
+name = "wasmlib"
+path = "src/main.rs"
+
+[dependencies]
+near-crypto = "0.28.0"
+serde = "1.0.217"
+serde_json = "1.0.137"
+
+

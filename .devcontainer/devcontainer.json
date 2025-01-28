@@ -1,0 +1,16 @@
+{
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-playwright.playwright",
+        "rust-lang.rust-analyzer",
+        "github.vscode-github-actions",
+        "github.copilot"
+      ]
+    }
+  },
+  "postCreateCommand": "./.devcontainer/install-dependencies.sh"
+}
