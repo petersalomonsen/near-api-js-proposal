@@ -67,7 +67,7 @@ await account.transfer({recipientId: 'peter.near', amount: NEAR`100`});
 or create a new account
 
 ```typescript
-await createAccount({accountId: 'newbie.near',
+await account.createAccount({accountId: 'newbie.near',
     initialBalance: NEAR`20`,
     fullAccessKeys: [ed25519`...`]
 });
@@ -124,6 +124,21 @@ console.log(accountSummary.validatorStake);
 console.log(accountSummary.storageUsage);
 console.log(accountSummary.contract);
 console.log(accountSummary.accessKeys);
+```
+
+# Builder / chaining pattern
+
+The builder or chaining pattern allows for constructing operations step by step using intuitive, method-chained syntax. This approach is especially useful in REPL environments, where developers can progressively discover and configure the necessary steps as they type. It provides a fluent interface, making complex workflows both concise and readable.
+
+Here's an example of chaining to create and configure a new account:
+
+```typescript
+await createAccount("newbie.near")
+    .fund(NEAR`20`)               // Specify the initial balance
+    .fullAccessKeys(["ed25519`...`"]) // Add full-access keys
+    .parent("psalomo.near")       // Specify the parent account
+    .signingKey("ed25519:...")    // Provide the signing key
+    .send();                      // Send the operation to the network
 ```
 
 # WebAssembly library
