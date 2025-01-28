@@ -1,12 +1,12 @@
 # NEAR JS client library proposal
 
-This is a proposas for creating an intuitive, simple, but yet flexible client library for NEAR protocol. It is meant for use by humans, but maybe even more important that it can be used by AI agents to generate client code. It's design and terminology must then be in a way that is easy for a language model to understand.
+This is a proposal for creating an intuitive, simple, but yet flexible client library for the NEAR protocol blockchain. It is meant for use by humans, but maybe even more important that it can be used by AI agents to generate client code. Its design and terminology must then be in a way that is easy for a language model to understand.
 
-# Working with base types such as Account, Network, Signer, Transaction etc.
+# Working with base types such as Account, Network, Signer, Transaction, etc.
 
-Standalone functions are intuitive, but may reduce flexibility. They either require the full context (network, signer etc) to be passed for every call, or the context must be stored in a global scope.
+Standalone functions are intuitive, but may reduce flexibility. They either require the full context (network, signer, etc.) to be passed for every call, or the context must be stored in a global scope.
 
-The object oriented approach allows working with multiple contexts simultaneously. Having the base structure object oriented, still allows introducing stateless standalone functions using the objects under the hood.
+The object-oriented approach allows working with multiple contexts simultaneously. Having the base structure object-oriented still allows introducing stateless standalone functions using the objects under the hood.
 
 # Creating an account object for various usages
 
